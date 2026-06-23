@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year 5 English Interactive Learning</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 800px; margin: auto; }
+        .card { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 25px; border-left: 8px solid #3498db; }
+        h1 { text-align: center; color: #2c3e50; }
+        #scoreBoard { font-size: 1.5em; font-weight: bold; text-align: center; color: #e67e22; margin-bottom: 20px; }
+        button { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .option-btn { background-color: #ecf0f1; color: #2c3e50; border: 2px solid #bdc3c7; }
+        .option-btn:hover { background-color: #dcdde1; }
+        .read-btn { background-color: #27ae60; color: white; margin-bottom: 20px; }
+        .read-btn:hover { background-color: #219150; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>English Reading Challenge</h1>
+    <div id="scoreBoard">Total Points: 0</div>
+    <div id="gameArea"></div>
+</div>
+
+<script>
+// Konfigurasi Suara Maksimum
+function speakText(text) {
+    window.speechSynthesis.cancel();
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = 'en-US';
+    speech.volume = 1.0; 
+    speech.rate = 0.9;
+    speech.pitch = 1.0;
+    window.speechSynthesis.speak(speech);
+}
+
+// Bunyi (Tone)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = (type === 'wrong') ? 200 : 800;
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+}
+
+const stories = [
+    { title: "1. The Lost Kitten", text: "Ali found a small, wet kitten under a bush. It was shivering. Ali brought it home, dried it with a towel, and gave it some warm milk.", questions: [
+        { q: "Where did Ali find the kitten?", a: ["Under a bush", "In a box", "On the road", "In a tree"], correct: 0 },
+        { q: "How did the kitten feel?", a: ["Happy", "Hungry", "Shivering", "Angry"], correct: 2 },
+        { q: "What did Ali do first?", a: ["Gave milk", "Dried it", "Found it", "Played with it"], correct: 2 },
+        { q: "What did Ali give the kitten?", a: ["Water", "Warm milk", "Juice", "Tea"], correct: 1 },
+        { q: "What is the story about?", a: ["A dog", "A lost kitten", "A school trip", "A bird"], correct: 1 }
+    ]},
+    { title: "2. The Helpful Boy", text: "Bala was walking to school. He saw an old lady struggling with her heavy bags. He ran to help her carry them to her house.", questions: [
+        { q: "Where was Bala going?", a: ["Home", "Market", "School", "Park"], correct: 2 },
+        { q: "Who did Bala see?", a: ["His friend", "An old lady", "A cat", "A teacher"], correct: 1 },
+        { q: "Why did the lady struggle?", a: ["She was tired", "Heavy bags", "No shoes", "Lost her way"], correct: 1 },
+        { q: "What did Bala do?", a: ["Ignored her", "Ran away", "Helped her", "Called police"], correct: 2 },
+        { q: "What is the moral?", a: ["Be kind", "Run fast", "Go to school", "Carry bags"], correct: 0 }
+    ]},
+    { title: "3. The School Garden", text: "The students are planting flowers in the school garden. Siti is watering the roses while Ahmad is digging the soil with a shovel.", questions: [
+        { q: "What are they doing?", a: ["Playing", "Planting flowers", "Cleaning", "Eating"], correct: 1 },
+        { q: "Where are they?", a: ["Garden", "Classroom", "Canteen", "Library"], correct: 0 },
+        { q: "What is Siti doing?", a: ["Digging", "Running", "Watering", "Painting"], correct: 2 },
+        { q: "What tool is Ahmad using?", a: ["Rake", "Shovel", "Scissors", "Broom"], correct: 1 },
+        { q: "What is the garden for?", a: ["Sports", "Flowers", "Cars", "Cooking"], correct: 1 }
+    ]},
+    { title: "4. The Rainy Day", text: "It is raining heavily today. The children cannot play football in the field. They stay in the classroom and read storybooks instead.", questions: [
+        { q: "What is the weather like?", a: ["Sunny", "Cloudy", "Raining", "Windy"], correct: 2 },
+        { q: "Can they play football?", a: ["Yes", "No", "Maybe", "Sometimes"], correct: 1 },
+        { q: "Why can't they play?", a: ["No ball", "Too tired", "Rain", "Bored"], correct: 2 },
+        { q: "Where are the children?", a: ["Field", "Classroom", "Home", "Store"], correct: 1 },
+        { q: "What are they doing inside?", a: ["Sleeping", "Playing", "Reading", "Dancing"], correct: 2 }
+    ]},
+    { title: "5. A Healthy Breakfast", text: "Mother prepares a healthy breakfast for the family. There is fried rice, fresh fruit, and warm tea on the table.", questions: [
+        { q: "Who prepares breakfast?", a: ["Father", "Mother", "Sister", "Brother"], correct: 1 },
+        { q: "What food is mentioned?", a: ["Noodles", "Fried rice", "Pizza", "Burger"], correct: 1 },
+        { q: "What kind of drink?", a: ["Cold water", "Juice", "Warm tea", "Coffee"], correct: 2 },
+        { q: "Is the breakfast healthy?", a: ["Yes", "No", "Maybe", "Don't know"], correct: 0 },
+        { q: "Where is the food?", a: ["Kitchen", "Floor", "Table", "Cupboard"], correct: 2 }
+    ]}
+];
+
+let score = 0;
+const gameArea = document.getElementById('gameArea');
+
+stories.forEach(story => {
+    let div = document.createElement('div');
+    div.className = 'card';
+    div.innerHTML = `<h2>${story.title}</h2><p style="font-size: 1.2em;">${story.text}</p>`;
+    
+    let readBtn = document.createElement('button');
+    readBtn.className = 'read-btn';
+    readBtn.innerText = "🔊 LISTEN TO STORY";
+    readBtn.onclick = () => speakText(story.text);
+    div.appendChild(readBtn);
+    
+    story.questions.forEach(item => {
+        let qDiv = document.createElement('div');
+        qDiv.innerHTML = `<p><strong>${item.q}</strong></p>`;
+        let attempts = 0;
+        
+        item.a.forEach((opt, oIdx) => {
+            let btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                if (oIdx === item.correct) {
+                    playSound('right');
+                    alert("Correct! Excellent job!");
+                    if (attempts < 2) score += 10;
+                    document.getElementById('scoreBoard').innerText = "Total Points: " + score;
+                } else {
+                    attempts++;
+                    playSound('wrong');
+                    if (attempts >= 3) { alert("3 wrong attempts. Moving on!"); }
+                    else { alert("Wrong! Try again."); }
+                }
+            };
+            qDiv.appendChild(btn);
+        });
+        div.appendChild(qDiv);
+    });
+    gameArea.appendChild(div);
+});
+</script>
+</body>
+</html>
