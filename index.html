@@ -3,130 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Year 5 English Interactive Learning</title>
+    <title>Year 5 Premium English Reading Suite</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background-color: #f0f2f5; color: #333; }
-        .container { max-width: 800px; margin: auto; }
-        .card { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); margin-bottom: 25px; border-left: 8px solid #3498db; }
-        h1 { text-align: center; color: #2c3e50; }
-        #scoreBoard { font-size: 1.5em; font-weight: bold; text-align: center; color: #e67e22; margin-bottom: 20px; }
-        button { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-        .option-btn { background-color: #ecf0f1; color: #2c3e50; border: 2px solid #bdc3c7; }
-        .option-btn:hover { background-color: #dcdde1; }
-        .read-btn { background-color: #27ae60; color: white; margin-bottom: 20px; }
-        .read-btn:hover { background-color: #219150; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f3; padding: 20px; color: #2c3e50; }
+        .container { max-width: 900px; margin: auto; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-bottom: 40px; border-top: 6px solid #3498db; }
+        h1 { text-align: center; color: #2980b9; font-size: 2.2em; margin-bottom: 5px; }
+        .score-board { text-align: center; font-size: 1.5em; font-weight: bold; color: #e67e22; background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .story-title { color: #2c3e50; font-size: 1.5em; margin-bottom: 15px; }
+        .story-text { font-size: 1.2em; line-height: 1.8; margin-bottom: 20px; text-align: justify; color: #444; }
+        .read-btn { background: #9b59b6; color: white; padding: 12px 20px; border: none; border-radius: 8px; font-size: 1.1em; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 25px; transition: 0.3s; }
+        .read-btn:hover { background: #8e44ad; }
+        .question-block { margin-bottom: 25px; background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #f1c40f; }
+        .question-text { font-weight: bold; font-size: 1.1em; margin-bottom: 10px; }
+        .option-btn { display: block; width: 100%; padding: 12px; margin: 8px 0; background: #fff; border: 2px solid #bdc3c7; border-radius: 8px; cursor: pointer; font-size: 1em; text-align: left; transition: all 0.2s ease; }
+        .option-btn:hover { background: #ecf0f1; border-color: #95a5a6; }
+        .correct { background-color: #2ecc71 !important; color: white !important; border-color: #27ae60 !important; font-weight: bold; }
+        .wrong { background-color: #e74c3c !important; color: white !important; border-color: #c0392b !important; text-decoration: line-through; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>English Reading Challenge</h1>
-    <div id="scoreBoard">Total Points: 0</div>
+    <h1>📚 English Reading Master</h1>
+    <div class="score-board" id="scoreBoard">Total Score: 0</div>
     <div id="gameArea"></div>
 </div>
 
 <script>
-// Konfigurasi Suara Maksimum
+let totalScore = 0;
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// Fungsi membaca teks (TTS)
 function speakText(text) {
     window.speechSynthesis.cancel();
     const speech = new SpeechSynthesisUtterance(text);
     speech.lang = 'en-US';
     speech.volume = 1.0; 
-    speech.rate = 0.9;
-    speech.pitch = 1.0;
+    speech.rate = 0.85; // Kelajuan ideal untuk murid
     window.speechSynthesis.speak(speech);
 }
 
-// Bunyi (Tone)
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// Fungsi Bunyi (Betul/Salah)
 function playSound(type) {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.frequency.value = (type === 'wrong') ? 200 : 800;
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    if(type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    } else {
+        // Bunyi ceria untuk jawapan betul
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(1000, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
 }
 
 const stories = [
-    { title: "1. The Lost Kitten", text: "Ali found a small, wet kitten under a bush. It was shivering. Ali brought it home, dried it with a towel, and gave it some warm milk.", questions: [
-        { q: "Where did Ali find the kitten?", a: ["Under a bush", "In a box", "On the road", "In a tree"], correct: 0 },
-        { q: "How did the kitten feel?", a: ["Happy", "Hungry", "Shivering", "Angry"], correct: 2 },
-        { q: "What did Ali do first?", a: ["Gave milk", "Dried it", "Found it", "Played with it"], correct: 2 },
-        { q: "What did Ali give the kitten?", a: ["Water", "Warm milk", "Juice", "Tea"], correct: 1 },
-        { q: "What is the story about?", a: ["A dog", "A lost kitten", "A school trip", "A bird"], correct: 1 }
+    { title: "1. The Lost Kitten's Adventure", text: "Ali was walking home from school when he heard a faint sound coming from a thick bush. He moved the branches carefully and found a tiny, wet kitten shivering in the cold. The kitten looked very hungry and scared. Ali decided to take it home. He gently wrapped the kitten in his warm school sweater. Once they reached home, he dried the kitten with a clean towel and poured some warm milk into a bowl. The kitten purred happily, and Ali felt proud of himself for helping a small creature in need.", questions: [
+        { q: "1. Where did Ali find the kitten?", a: ["In the kitchen", "Under a bush", "On the road", "In a park"], correct: 1 },
+        { q: "2. How did the kitten feel when found?", a: ["Hungry and scared", "Happy and excited", "Angry and loud", "Playful and fast"], correct: 0 },
+        { q: "3. What did Ali use to wrap the kitten?", a: ["A plastic bag", "His school sweater", "A thick blanket", "A newspaper"], correct: 1 },
+        { q: "4. What did Ali give the kitten to drink?", a: ["Cold water", "Fruit juice", "Warm milk", "Chocolate milk"], correct: 2 },
+        { q: "5. How did the kitten react after drinking?", a: ["It ran away", "It started to cry", "It purred happily", "It went to sleep"], correct: 2 }
     ]},
-    { title: "2. The Helpful Boy", text: "Bala was walking to school. He saw an old lady struggling with her heavy bags. He ran to help her carry them to her house.", questions: [
-        { q: "Where was Bala going?", a: ["Home", "Market", "School", "Park"], correct: 2 },
-        { q: "Who did Bala see?", a: ["His friend", "An old lady", "A cat", "A teacher"], correct: 1 },
-        { q: "Why did the lady struggle?", a: ["She was tired", "Heavy bags", "No shoes", "Lost her way"], correct: 1 },
-        { q: "What did Bala do?", a: ["Ignored her", "Ran away", "Helped her", "Called police"], correct: 2 },
-        { q: "What is the moral?", a: ["Be kind", "Run fast", "Go to school", "Carry bags"], correct: 0 }
+    { title: "2. Bala's Act of Kindness", text: "Bala was walking to school early one morning. As he reached the main road, he saw an old lady struggling to carry two very heavy bags of vegetables. She looked very tired and was walking slowly. Without thinking twice, Bala ran towards her and offered his help. He carried the heavy bags all the way to her house. The lady was so happy that she thanked Bala repeatedly and offered him a glass of fresh orange juice. Bala arrived at school feeling very satisfied with his good deed.", questions: [
+        { q: "1. Where was Bala going?", a: ["The market", "The park", "School", "His friend's house"], correct: 2 },
+        { q: "2. Why was the lady struggling?", a: ["She was lost", "She had heavy bags", "She was running", "She was sick"], correct: 1 },
+        { q: "3. What did Bala do when he saw her?", a: ["He ignored her", "He ran away", "He offered help", "He called his mother"], correct: 2 },
+        { q: "4. Where did Bala take the bags?", a: ["To the school", "To the lady's house", "To the market", "To the police station"], correct: 1 },
+        { q: "5. How did Bala feel at the end?", a: ["Tired", "Satisfied", "Angry", "Bored"], correct: 1 }
     ]},
-    { title: "3. The School Garden", text: "The students are planting flowers in the school garden. Siti is watering the roses while Ahmad is digging the soil with a shovel.", questions: [
-        { q: "What are they doing?", a: ["Playing", "Planting flowers", "Cleaning", "Eating"], correct: 1 },
-        { q: "Where are they?", a: ["Garden", "Classroom", "Canteen", "Library"], correct: 0 },
-        { q: "What is Siti doing?", a: ["Digging", "Running", "Watering", "Painting"], correct: 2 },
-        { q: "What tool is Ahmad using?", a: ["Rake", "Shovel", "Scissors", "Broom"], correct: 1 },
-        { q: "What is the garden for?", a: ["Sports", "Flowers", "Cars", "Cooking"], correct: 1 }
+    { title: "3. The School Garden Project", text: "The students of Year 5 Gemilang are working hard in the school garden today. Siti is busy watering the beautiful roses, while Ahmad is digging the soil with a small metal shovel. They are preparing the beds to plant some new vegetables like tomatoes and carrots. Their teacher, Cikgu Maria, is guiding them on how to plant the seeds properly. The students enjoy being outdoors and learning about nature. They hope that the garden will grow healthy and provide fresh food for the whole school soon.", questions: [
+        { q: "1. What are the students doing?", a: ["Playing games", "Cleaning the classroom", "Planting in the garden", "Studying maths"], correct: 2 },
+        { q: "2. Who is watering the roses?", a: ["Ahmad", "Siti", "Cikgu Maria", "The principal"], correct: 1 },
+        { q: "3. What is Ahmad doing?", a: ["Painting a fence", "Digging the soil", "Picking flowers", "Eating lunch"], correct: 1 },
+        { q: "4. What will they plant?", a: ["Fruit trees", "Vegetables", "Roses only", "Grass"], correct: 1 },
+        { q: "5. Why do they enjoy the activity?", a: ["It is easy", "It is quiet", "They enjoy being outdoors", "They want a prize"], correct: 2 }
     ]},
-    { title: "4. The Rainy Day", text: "It is raining heavily today. The children cannot play football in the field. They stay in the classroom and read storybooks instead.", questions: [
-        { q: "What is the weather like?", a: ["Sunny", "Cloudy", "Raining", "Windy"], correct: 2 },
-        { q: "Can they play football?", a: ["Yes", "No", "Maybe", "Sometimes"], correct: 1 },
-        { q: "Why can't they play?", a: ["No ball", "Too tired", "Rain", "Bored"], correct: 2 },
-        { q: "Where are the children?", a: ["Field", "Classroom", "Home", "Store"], correct: 1 },
-        { q: "What are they doing inside?", a: ["Sleeping", "Playing", "Reading", "Dancing"], correct: 2 }
+    { title: "4. A Rainy Day in Class", text: "It is raining very heavily outside the classroom today. The dark clouds are everywhere, and the wind is blowing strongly. Because of the heavy rain, the children cannot go to the football field to play their favorite game. They are staying inside the classroom quietly. Instead of playing, they are reading their favorite storybooks and drawing pictures. Even though they cannot play outside, they are still having a great time together. They believe that reading is just as fun as playing football.", questions: [
+        { q: "1. What is the weather like?", a: ["Sunny and hot", "Windy and raining", "Cloudy but calm", "Snowy"], correct: 1 },
+        { q: "2. Why can't they play football?", a: ["They are tired", "The ball is lost", "It is raining heavily", "They have a test"], correct: 2 },
+        { q: "3. Where are the children?", a: ["In the field", "In the canteen", "At home", "Inside the classroom"], correct: 3 },
+        { q: "4. What are they doing inside?", a: ["Sleeping", "Reading and drawing", "Playing games", "Eating"], correct: 1 },
+        { q: "5. How do they feel about the situation?", a: ["Sad", "Bored", "Having a great time", "Angry"], correct: 2 }
     ]},
-    { title: "5. A Healthy Breakfast", text: "Mother prepares a healthy breakfast for the family. There is fried rice, fresh fruit, and warm tea on the table.", questions: [
-        { q: "Who prepares breakfast?", a: ["Father", "Mother", "Sister", "Brother"], correct: 1 },
-        { q: "What food is mentioned?", a: ["Noodles", "Fried rice", "Pizza", "Burger"], correct: 1 },
-        { q: "What kind of drink?", a: ["Cold water", "Juice", "Warm tea", "Coffee"], correct: 2 },
-        { q: "Is the breakfast healthy?", a: ["Yes", "No", "Maybe", "Don't know"], correct: 0 },
-        { q: "Where is the food?", a: ["Kitchen", "Floor", "Table", "Cupboard"], correct: 2 }
+    { title: "5. Preparing a Healthy Breakfast", text: "Every Sunday morning, Mother prepares a very special and healthy breakfast for the whole family. She cooks delicious fried rice with lots of vegetables. On the table, there is also fresh fruit like papaya and apples, and a large jug of warm tea. Mother believes that starting the day with a healthy meal is important for everyone. Father helps her set the table, while the children help to wash the fruits. They always eat together and talk happily about their plans for the week ahead.", questions: [
+        { q: "1. When does Mother cook the special meal?", a: ["Every day", "Saturday night", "Sunday morning", "Monday morning"], correct: 2 },
+        { q: "2. What is the main dish?", a: ["Noodles", "Fried rice", "Toast", "Porridge"], correct: 1 },
+        { q: "3. What fruit is mentioned?", a: ["Papaya and apples", "Banana and grapes", "Orange and melon", "Mango and durian"], correct: 0 },
+        { q: "4. What is Mother's belief?", a: ["Breakfast is optional", "Healthy meals are important", "Cooking is easy", "Food is just for energy"], correct: 1 },
+        { q: "5. What do the children do?", a: ["Cook the rice", "Wash the fruits", "Set the table", "Drink the tea"], correct: 1 }
+    ]},
+    { title: "6. The Brave Little Bird", text: "Pip is a small bird. He lives in a cozy nest high up in an old oak tree. All his brothers and sisters already know how to fly. However, Pip is afraid of falling. One sunny morning, his mother tells him that he needs to try. Pip stands at the edge of the nest, takes a deep breath, and opens his wings. He jumps and starts to fall, but quickly flaps his wings hard. Suddenly, he is flying! He feels very happy and proud.", questions: [
+        { q: "1. Where does Pip live?", a: ["In a cage", "High in an oak tree", "On the ground", "Under a rock"], correct: 1 },
+        { q: "2. Why hasn't Pip flown yet?", a: ["His wings are broken", "He is too young", "He is afraid of falling", "He doesn't want to"], correct: 2 },
+        { q: "3. Who tells Pip to try flying?", a: ["His brother", "His father", "His sister", "His mother"], correct: 3 },
+        { q: "4. What does Pip do after jumping?", a: ["He closes his eyes", "He flaps his wings hard", "He screams loudly", "He falls to the ground"], correct: 1 },
+        { q: "5. How does Pip feel at the end?", a: ["Sad and angry", "Happy and proud", "Tired and sleepy", "Scared and cold"], correct: 1 }
+    ]},
+    { title: "7. A Visit to the Zoo", text: "Last Saturday, Amin and his family visited the National Zoo. They arrived early in the morning. First, they went to see the tall giraffes. Amin bought some special leaves and fed them. Next, they watched a funny monkey show where the monkeys rode tiny bicycles. After that, they had a picnic lunch near the elephant enclosure. Amin's favorite part was seeing the fierce tigers sleeping under a big tree. It was a tiring but wonderful day for the whole family.", questions: [
+        { q: "1. When did Amin visit the zoo?", a: ["Last Sunday", "Last Saturday", "Yesterday", "Last Friday"], correct: 1 },
+        { q: "2. What did Amin feed to the giraffes?", a: ["Apples", "Carrots", "Special leaves", "Bananas"], correct: 2 },
+        { q: "3. What were the monkeys doing?", a: ["Eating bananas", "Sleeping", "Swimming", "Riding tiny bicycles"], correct: 3 },
+        { q: "4. Where did they have their picnic?", a: ["Near the tigers", "Near the elephants", "At the entrance", "In the car"], correct: 1 },
+        { q: "5. What was Amin's favorite part?", a: ["Feeding giraffes", "The monkey show", "Seeing sleeping tigers", "Eating lunch"], correct: 2 }
+    ]},
+    { title: "8. The Beach Cleanup", text: "Sarah and her classmates went to the beach for a special project. They were not there to swim. They were there to clean up the rubbish. The teacher gave everyone big black garbage bags and thick gloves. They picked up plastic bottles, old food wrappers, and empty cans. Suddenly, Sarah found a small sea turtle trapped in a fishing net. She quickly called her teacher for help. They carefully cut the net and released the turtle back into the beautiful blue ocean.", questions: [
+        { q: "1. Why did Sarah go to the beach?", a: ["To swim", "To clean up rubbish", "To build a sandcastle", "To fish"], correct: 1 },
+        { q: "2. What did the teacher give the students?", a: ["Towels and hats", "Garbage bags and gloves", "Food and drinks", "Toys and games"], correct: 1 },
+        { q: "3. What did they pick up?", a: ["Seashells", "Seaweed", "Plastic bottles and cans", "Sand"], correct: 2 },
+        { q: "4. What did Sarah find trapped in a net?", a: ["A fish", "A crab", "A sea turtle", "A dolphin"], correct: 2 },
+        { q: "5. What did they do to the trapped animal?", a: ["Took it home", "Released it into the ocean", "Put it in a bag", "Left it there"], correct: 1 }
+    ]},
+    { title: "9. The Magic Painting", text: "Johan loves to paint pictures. For his birthday, his grandmother gave him a special wooden box filled with colourful paints. One evening, Johan painted a picture of a small sailing boat on a calm blue sea. To his surprise, the water in the painting started to move. He could hear the sound of the waves and feel the salty wind. The little boat sailed right out of the paper and floated around his bedroom. Johan smiled because he knew his paints were truly magical.", questions: [
+        { q: "1. What does Johan love to do?", a: ["Sing", "Read", "Paint pictures", "Dance"], correct: 2 },
+        { q: "2. What did his grandmother give him?", a: ["A new toy", "Colourful paints", "A book", "A bicycle"], correct: 1 },
+        { q: "3. What did Johan paint?", a: ["A mountain", "A sailing boat", "A house", "A forest"], correct: 1 },
+        { q: "4. What happened to the water in the painting?", a: ["It dried up", "It changed colour", "It started to move", "It disappeared"], correct: 2 },
+        { q: "5. Where did the boat float?", a: ["In the bathroom", "Out the window", "Around his bedroom", "On the table"], correct: 2 }
     ]}
 ];
 
-let score = 0;
 const gameArea = document.getElementById('gameArea');
 
-stories.forEach(story => {
-    let div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `<h2>${story.title}</h2><p style="font-size: 1.2em;">${story.text}</p>`;
+stories.forEach((story, sIndex) => {
+    let card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h2 class="story-title">${story.title}</h2><p class="story-text">${story.text}</p>`;
     
     let readBtn = document.createElement('button');
     readBtn.className = 'read-btn';
-    readBtn.innerText = "🔊 LISTEN TO STORY";
+    readBtn.innerText = "🔊 READ ALOUD TO CLASS";
     readBtn.onclick = () => speakText(story.text);
-    div.appendChild(readBtn);
-    
-    story.questions.forEach(item => {
-        let qDiv = document.createElement('div');
-        qDiv.innerHTML = `<p><strong>${item.q}</strong></p>`;
+    card.appendChild(readBtn);
+
+    story.questions.forEach((item, qIndex) => {
+        let qBlock = document.createElement('div');
+        qBlock.className = 'question-block';
+        qBlock.innerHTML = `<div class="question-text">${item.q}</div>`;
+        
         let attempts = 0;
+        let answeredCorrectly = false;
         
         item.a.forEach((opt, oIdx) => {
             let btn = document.createElement('button');
             btn.className = 'option-btn';
             btn.innerText = opt;
-            btn.onclick = () => {
+            
+            btn.onclick = (e) => {
+                if (answeredCorrectly || attempts >= 3) return; // Kunci butang jika dah betul atau lebih 3 kali salah
+                
                 if (oIdx === item.correct) {
+                    e.target.classList.add('correct');
                     playSound('right');
-                    alert("Correct! Excellent job!");
-                    if (attempts < 2) score += 10;
-                    document.getElementById('scoreBoard').innerText = "Total Points: " + score;
+                    answeredCorrectly = true;
+                    
+                    if (attempts < 2) {
+                        totalScore += 10;
+                    }
+                    document.getElementById('scoreBoard').innerText = "Total Score: " + totalScore;
+                    setTimeout(() => alert("Correct! Great job!"), 100);
                 } else {
-                    attempts++;
-                    playSound('wrong');
-                    if (attempts >= 3) { alert("3 wrong attempts. Moving on!"); }
-                    else { alert("Wrong! Try again."); }
+                    if (!e.target.classList.contains('wrong')) {
+                        attempts++;
+                        e.target.classList.add('wrong');
+                        playSound('wrong');
+                        
+                        if (attempts >= 3) {
+                            setTimeout(() => alert("You made 3 mistakes. No points for this question. Moving on!"), 100);
+                        } else {
+                            setTimeout(() => alert("Wrong! Try again."), 100);
+                        }
+                    }
                 }
             };
-            qDiv.appendChild(btn);
+            qBlock.appendChild(btn);
         });
-        div.appendChild(qDiv);
+        card.appendChild(qBlock);
     });
-    gameArea.appendChild(div);
+    gameArea.appendChild(card);
 });
 </script>
 </body>
